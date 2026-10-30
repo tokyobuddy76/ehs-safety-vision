@@ -38,6 +38,27 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [isLandscape, setIsLandscape] = useState<boolean>(false);
+
+  // Monitor device orientation (landscape vs portrait)
+  useEffect(() => {
+    const checkOrientation = () => {
+      if (typeof window === 'undefined') return;
+      // Check window dimensions and orientation media query
+      const isLandscapeQuery = window.matchMedia('(orientation: landscape)').matches;
+      const isWidthGreater = window.innerWidth > window.innerHeight;
+      setIsLandscape(isLandscapeQuery || isWidthGreater);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // Stop active stream tracks
   const stopStream = () => {
@@ -195,13 +216,22 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-1 sm:p-4 animate-in fade-in duration-200">
+      <div
+        className={`relative w-full ${
+          isLandscape ? 'max-w-5xl h-[94vh]' : 'max-w-3xl max-h-[95vh]'
+        } bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col`}
+      >
         {/* Top Header Bar */}
-        <div className="px-4 py-3 bg-slate-900/90 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="px-4 py-2.5 bg-slate-900/90 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-amber-400" />
             <span className="font-bold text-sm tracking-wide">Workplace Inspection Camera</span>
+            {isLandscape && (
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Landscape Grip
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -236,118 +266,163 @@ export const CameraModal: React.FC<CameraModalProps> = ({
           </div>
         </div>
 
-        {/* Video Viewfinder Area */}
-        <div className="relative flex-1 bg-black flex items-center justify-center min-h-[360px] max-h-[65vh] overflow-hidden">
-          {/* Live Video */}
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`w-full h-full object-contain ${
-              facingMode === 'user' ? 'scale-x-[-1]' : ''
-            }`}
-          />
+        {/* Content Body: In landscape, video is on left, shutter controls are on the right */}
+        <div className={`flex-1 min-h-0 flex ${isLandscape ? 'flex-row' : 'flex-col'}`}>
+          {/* Video Viewfinder Area */}
+          <div className="relative flex-1 bg-black flex items-center justify-center min-h-[300px] overflow-hidden">
+            {/* Live Video */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`w-full h-full object-contain ${
+                facingMode === 'user' ? 'scale-x-[-1]' : ''
+              }`}
+            />
 
-          {/* Shutter Flash Animation */}
-          {isCapturing && (
-            <div className="absolute inset-0 bg-white animate-in fade-in duration-75 z-20 pointer-events-none" />
-          )}
+            {/* Shutter Flash Animation */}
+            {isCapturing && (
+              <div className="absolute inset-0 bg-white animate-in fade-in duration-75 z-20 pointer-events-none" />
+            )}
 
-          {/* Viewfinder Alignment Overlay */}
-          {!cameraError && !isInitializing && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="w-4/5 h-4/5 border border-white/20 rounded-xl relative">
-                {/* 4 Corner Crosshairs */}
-                <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-amber-400" />
-                <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-amber-400" />
-                <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-amber-400" />
-                <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-amber-400" />
+            {/* Viewfinder Alignment Overlay */}
+            {!cameraError && !isInitializing && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div className="w-4/5 h-4/5 border border-white/20 rounded-xl relative">
+                  {/* 4 Corner Crosshairs */}
+                  <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-amber-400" />
+                  <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-amber-400" />
+                  <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-amber-400" />
+                  <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-amber-400" />
 
-                <div className="absolute bottom-3 inset-x-0 text-center">
-                  <span className="px-3 py-1 rounded bg-black/60 text-white text-xs font-semibold backdrop-blur-xs">
-                    Align workplace area, machinery, or activity
-                  </span>
+                  <div className="absolute bottom-3 inset-x-0 text-center">
+                    <span className="px-3 py-1 rounded bg-black/60 text-white text-xs font-semibold backdrop-blur-xs">
+                      Align workplace area, machinery, or activity
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Initializing Spinner */}
-          {isInitializing && !cameraError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 text-white gap-3 z-10">
-              <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-semibold text-slate-300">Activating camera viewfinder...</p>
-            </div>
-          )}
-
-          {/* Error Message with Fallback */}
-          {cameraError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-slate-950 text-white text-center gap-4 z-10">
-              <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
-                <AlertTriangle className="w-6 h-6" />
+            {/* Initializing Spinner */}
+            {isInitializing && !cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 text-white gap-3 z-10">
+                <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-semibold text-slate-300">Activating camera viewfinder...</p>
               </div>
-              <div className="space-y-1 max-w-md">
-                <h3 className="font-bold text-sm sm:text-base text-white">Direct Camera Access Unavailable</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">{cameraError}</p>
-              </div>
+            )}
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <button
-                  onClick={() => {
-                    onClose();
-                    onFallbackToFilePicker();
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
-                >
-                  <Smartphone className="w-4 h-4" />
-                  <span>Use Device Camera / File Picker</span>
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+            {/* Error Message with Fallback */}
+            {cameraError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-slate-950 text-white text-center gap-4 z-10">
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <div className="space-y-1 max-w-md">
+                  <h3 className="font-bold text-sm sm:text-base text-white">Direct Camera Access Unavailable</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">{cameraError}</p>
+                </div>
 
-        {/* Bottom Shutter Controls */}
-        <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between shrink-0">
-          <div className="text-xs text-slate-400 hidden sm:block">
-            <span>Orientation: </span>
-            <span className="text-slate-200 font-semibold uppercase">
-              {facingMode === 'environment' ? 'Rear (Field / Work Area)' : 'Front (Webcam)'}
-            </span>
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onFallbackToFilePicker();
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Use Device Camera / File Picker</span>
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Center Shutter Button */}
-          <div className="mx-auto flex items-center gap-4">
-            <button
-              onClick={handleSnapPhoto}
-              disabled={isInitializing || Boolean(cameraError) || isCapturing}
-              className="relative w-16 h-16 rounded-full bg-white hover:bg-slate-100 flex items-center justify-center shadow-lg transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed group border-4 border-slate-900 ring-2 ring-amber-400"
-              title="Snap Photograph"
-            >
-              <div className="w-12 h-12 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors flex items-center justify-center text-slate-950">
-                <Camera className="w-6 h-6" />
+          {/* Shutter Controls: Positioned on the RIGHT in landscape, or BOTTOM in portrait */}
+          {isLandscape ? (
+            /* Landscape Right-Side Shutter Bar (Thumb Grip) */
+            <div className="w-24 sm:w-28 bg-slate-900 border-l border-slate-800 flex flex-col items-center justify-between py-6 px-2 shrink-0 z-10 shadow-xl">
+              {/* Top indicator icon */}
+              <div className="flex flex-col items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider text-center">
+                <Smartphone className="w-4 h-4 text-amber-400 mb-1 rotate-90" />
+                <span>Right Hand</span>
               </div>
-            </button>
-          </div>
 
-          {/* Fallback button on bottom right */}
-          <button
-            onClick={() => {
-              onClose();
-              onFallbackToFilePicker();
-            }}
-            className="text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1.5 transition-colors"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Upload instead</span>
-          </button>
+              {/* Shutter Button on the right thumb zone */}
+              <div className="my-auto flex flex-col items-center gap-3">
+                <button
+                  onClick={handleSnapPhoto}
+                  disabled={isInitializing || Boolean(cameraError) || isCapturing}
+                  className="relative w-18 h-18 rounded-full bg-white hover:bg-slate-100 flex items-center justify-center shadow-2xl transition-transform active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed group border-4 border-slate-900 ring-4 ring-amber-400"
+                  title="Snap Photograph (Right Thumb)"
+                >
+                  <div className="w-14 h-14 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors flex items-center justify-center text-slate-950 shadow-inner">
+                    <Camera className="w-7 h-7" />
+                  </div>
+                </button>
+                <span className="text-[11px] font-black uppercase text-amber-400 tracking-wide">
+                  CAPTURE
+                </span>
+              </div>
+
+              {/* Fallback button */}
+              <button
+                onClick={() => {
+                  onClose();
+                  onFallbackToFilePicker();
+                }}
+                className="text-[10px] text-slate-400 hover:text-amber-400 flex flex-col items-center gap-1 transition-colors text-center"
+                title="Upload photo instead"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload</span>
+              </button>
+            </div>
+          ) : (
+            /* Portrait Bottom Shutter Bar */
+            <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between shrink-0">
+              <div className="text-xs text-slate-400 hidden sm:block">
+                <span>Orientation: </span>
+                <span className="text-slate-200 font-semibold uppercase">
+                  {facingMode === 'environment' ? 'Rear (Field / Work Area)' : 'Front (Webcam)'}
+                </span>
+              </div>
+
+              {/* Center Shutter Button */}
+              <div className="mx-auto flex items-center gap-4">
+                <button
+                  onClick={handleSnapPhoto}
+                  disabled={isInitializing || Boolean(cameraError) || isCapturing}
+                  className="relative w-16 h-16 rounded-full bg-white hover:bg-slate-100 flex items-center justify-center shadow-lg transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed group border-4 border-slate-900 ring-2 ring-amber-400"
+                  title="Snap Photograph"
+                >
+                  <div className="w-12 h-12 rounded-full bg-amber-500 group-hover:bg-amber-400 transition-colors flex items-center justify-center text-slate-950">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                </button>
+              </div>
+
+              {/* Fallback button on bottom right */}
+              <button
+                onClick={() => {
+                  onClose();
+                  onFallbackToFilePicker();
+                }}
+                className="text-xs text-slate-400 hover:text-amber-400 flex items-center gap-1.5 transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Upload instead</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
