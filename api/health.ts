@@ -15,6 +15,13 @@ export default function healthHandler(_req: Request, res: Response) {
     status: 'ok',
     service: 'EHS Safety Vision Serverless API',
     geminiConfigured: isKeyPresent,
+    qrService: {
+      provider: 'api.qrserver.com',
+      noKeyRequired: true,
+      status: 'operational',
+      endpoint: 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https%3A%2F%2Fyour-app.vercel.app',
+    },
+    endpoints: ['/api/health', '/api/analyze-safety', '/api/qr-code'],
     timestamp: new Date().toISOString(),
   });
 }

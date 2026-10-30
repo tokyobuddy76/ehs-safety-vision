@@ -10,6 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import analyzeSafetyHandler from './api/analyze-safety.ts';
 import healthHandler from './api/health.ts';
+import qrCodeHandler from './api/qr-code.ts';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ async function startServer() {
   // API Routes
   app.post('/api/analyze-safety', analyzeSafetyHandler);
   app.get('/api/health', healthHandler);
+  app.get('/api/qr-code', qrCodeHandler);
 
   // Mount Vite middleware in development or static assets in production
   if (process.env.NODE_ENV === 'production') {

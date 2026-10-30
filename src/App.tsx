@@ -18,6 +18,7 @@ import {
   Printer,
   ChevronDown,
   Wrench,
+  QrCode,
 } from 'lucide-react';
 import { PhotoUploader } from './components/PhotoUploader.tsx';
 import { ImagePreview } from './components/ImagePreview.tsx';
@@ -34,6 +35,7 @@ import { NoHazardResult } from './components/NoHazardResult.tsx';
 import { PrintReport } from './components/PrintReport.tsx';
 import { DiagnosticsModal } from './components/DiagnosticsModal.tsx';
 import { ModelSelector } from './components/ModelSelector.tsx';
+import { QRCodeModal } from './components/QRCodeModal.tsx';
 import type { EHSAssessmentResponse, EHSHazardFinding } from './types/safety.ts';
 import type { SampleImageScenario } from './data/sampleImages.ts';
 
@@ -41,6 +43,7 @@ export default function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string>('gemini-3.1-flash-lite');
   const [isDiagnosticsOpen, setIsDiagnosticsOpen] = useState<boolean>(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState<boolean>(false);
   const [fileInfo, setFileInfo] = useState<{ name: string; size: string; mimeType: string } | null>(
     null
   );
@@ -225,6 +228,15 @@ export default function App() {
               </button>
             )}
             <button
+              onClick={() => setIsQrModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-medium text-slate-300 transition-colors"
+              title="Mobile QR Code"
+            >
+              <QrCode className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">QR Code</span>
+            </button>
+
+            <button
               onClick={() => setIsDiagnosticsOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-medium text-slate-300 transition-colors"
               title="Run System Diagnostics & Troubleshoot"
@@ -240,6 +252,12 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* QR Code Modal */}
+      <QRCodeModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+      />
 
       {/* Diagnostics & Troubleshooter Modal */}
       <DiagnosticsModal

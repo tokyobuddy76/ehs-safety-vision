@@ -58,6 +58,12 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ isOpen, onCl
       status: 'pending',
       message: 'Testing image optimization and JSON schema handling...',
     },
+    {
+      id: 'qr',
+      name: 'api.qrserver.com QR Service',
+      status: 'pending',
+      message: 'Testing serverless /api/qr-code connection...',
+    },
   ]);
 
   const runDiagnostics = async () => {
@@ -228,6 +234,52 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ isOpen, onCl
                 status: 'warning',
                 message: 'Canvas test failed',
                 details: e instanceof Error ? e.message : 'Unknown error',
+              }
+            : r
+        )
+      );
+    }
+
+    // 5. Check QR Code Service (api.qrserver.com)
+    try {
+      const qrRes = await fetch('/api/qr-code?size=240x240&data=https%3A%2F%2Fyour-app.vercel.app&format=json');
+      if (qrRes.ok) {
+        const qrData = await qrRes.json();
+        setResults((prev) =>
+          prev.map((r) =>
+            r.id === 'qr'
+              ? {
+                  ...r,
+                  status: 'success',
+                  message: 'api.qrserver.com serverless proxy verified (240x240 QR)',
+                  details: `Service: ${qrData.service} • Size: ${qrData.size} • No key required`,
+                }
+              : r
+          )
+        );
+      } else {
+        setResults((prev) =>
+          prev.map((r) =>
+            r.id === 'qr'
+              ? {
+                  ...r,
+                  status: 'warning',
+                  message: `QR code endpoint returned HTTP ${qrRes.status}`,
+                  details: 'Upstream api.qrserver.com check failed.',
+                }
+              : r
+          )
+        );
+      }
+    } catch (qrErr: unknown) {
+      setResults((prev) =>
+        prev.map((r) =>
+          r.id === 'qr'
+            ? {
+                ...r,
+                status: 'warning',
+                message: 'Failed to connect to /api/qr-code',
+                details: qrErr instanceof Error ? qrErr.message : 'Network error',
               }
             : r
         )
