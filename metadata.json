@@ -1,0 +1,6 @@
+{
+  "name": "EHS Safety Vision",
+  "description": "AI-assisted visual workplace inspection screening tool based on the Employee EHS Handbook.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
