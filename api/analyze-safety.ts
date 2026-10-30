@@ -403,20 +403,49 @@ function sanitizeEHSResponse(data: Partial<EHSAssessmentResponse>): EHSAssessmen
 
   const rawHazards = Array.isArray(data.hazards) ? data.hazards : [];
   const sanitizedHazards: EHSHazardFinding[] = rawHazards.map((h, index) => {
-    // Validate bounding box bounds
+    // Validate bounding box bounds from various model output formats
     let bbox = null;
-    if (
-      h.boundingBox &&
-      typeof h.boundingBox.x === 'number' &&
-      typeof h.boundingBox.y === 'number' &&
-      typeof h.boundingBox.width === 'number' &&
-      typeof h.boundingBox.height === 'number'
-    ) {
-      const x = Math.max(0, Math.min(1, h.boundingBox.x));
-      const y = Math.max(0, Math.min(1, h.boundingBox.y));
-      const width = Math.max(0.01, Math.min(1 - x, h.boundingBox.width));
-      const height = Math.max(0.01, Math.min(1 - y, h.boundingBox.height));
-      bbox = { x, y, width, height };
+    const rawBox = h.boundingBox as any;
+    if (rawBox) {
+      let x = 0;
+      let y = 0;
+      let width = 0.2;
+      let height = 0.2;
+
+      if (typeof rawBox.x === 'number' && typeof rawBox.y === 'number') {
+        x = rawBox.x;
+        y = rawBox.y;
+        width = typeof rawBox.width === 'number' ? rawBox.width : 0.2;
+        height = typeof rawBox.height === 'number' ? rawBox.height : 0.2;
+      } else if (typeof rawBox.ymin === 'number' && typeof rawBox.xmin === 'number') {
+        // [ymin, xmin, ymax, xmax] standard Gemini detection
+        y = rawBox.ymin > 1 ? rawBox.ymin / 1000 : rawBox.ymin;
+        x = rawBox.xmin > 1 ? rawBox.xmin / 1000 : rawBox.xmin;
+        const ymax = rawBox.ymax > 1 ? rawBox.ymax / 1000 : rawBox.ymax;
+        const xmax = rawBox.xmax > 1 ? rawBox.xmax / 1000 : rawBox.xmax;
+        width = Math.max(0.05, xmax - x);
+        height = Math.max(0.05, ymax - y);
+      } else if (Array.isArray(rawBox) && rawBox.length === 4) {
+        // [ymin, xmin, ymax, xmax] as array
+        y = rawBox[0] > 1 ? rawBox[0] / 1000 : rawBox[0];
+        x = rawBox[1] > 1 ? rawBox[1] / 1000 : rawBox[1];
+        const ymax = rawBox[2] > 1 ? rawBox[2] / 1000 : rawBox[2];
+        const xmax = rawBox[3] > 1 ? rawBox[3] / 1000 : rawBox[3];
+        width = Math.max(0.05, xmax - x);
+        height = Math.max(0.05, ymax - y);
+      }
+
+      // Normalize if model returned 0-1000 integers
+      if (x > 1) x = x / 1000;
+      if (y > 1) y = y / 1000;
+      if (width > 1) width = width / 1000;
+      if (height > 1) height = height / 1000;
+
+      const clampedX = Math.max(0, Math.min(0.9, x));
+      const clampedY = Math.max(0, Math.min(0.9, y));
+      const clampedW = Math.max(0.05, Math.min(1 - clampedX, width));
+      const clampedH = Math.max(0.05, Math.min(1 - clampedY, height));
+      bbox = { x: clampedX, y: clampedY, width: clampedW, height: clampedH };
     }
 
     return {

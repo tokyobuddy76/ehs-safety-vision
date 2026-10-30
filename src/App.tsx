@@ -66,35 +66,46 @@ export default function App() {
 
   const handleSelectScenario = (scenario: SampleImageScenario) => {
     // Render SVG into an off-screen canvas to produce a clean raster PNG for Gemini
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 900;
-      canvas.height = 600;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        const pngBase64 = canvas.toDataURL('image/png', 0.95);
-        setSelectedImage(pngBase64);
-        setFileInfo({
-          name: scenario.title,
-          size: '0.8 MB (Rendered)',
-          mimeType: 'image/png',
-        });
-      } else {
+    try {
+      const blob = new Blob([scenario.dataUrl.replace(/^data:image\/svg\+xml;utf8,/, '')], {
+        type: 'image/svg+xml;charset=utf-8',
+      });
+      const blobUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 600;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const pngBase64 = canvas.toDataURL('image/png', 0.95);
+          setSelectedImage(pngBase64);
+          setFileInfo({
+            name: scenario.title,
+            size: '0.8 MB (Rendered)',
+            mimeType: 'image/png',
+          });
+        }
+        URL.revokeObjectURL(blobUrl);
+        setAssessment(null);
+        setSelectedHazardId(null);
+        setError(null);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(blobUrl);
         setSelectedImage(scenario.dataUrl);
         setFileInfo({
           name: scenario.title,
           size: 'Scenario Vector',
           mimeType: 'image/svg+xml',
         });
-      }
-      setAssessment(null);
-      setSelectedHazardId(null);
-      setError(null);
-    };
-    img.onerror = () => {
+        setAssessment(null);
+        setSelectedHazardId(null);
+        setError(null);
+      };
+      img.src = blobUrl;
+    } catch {
       setSelectedImage(scenario.dataUrl);
       setFileInfo({
         name: scenario.title,
@@ -104,8 +115,7 @@ export default function App() {
       setAssessment(null);
       setSelectedHazardId(null);
       setError(null);
-    };
-    img.src = scenario.dataUrl;
+    }
   };
 
   const handleRemoveImage = () => {
