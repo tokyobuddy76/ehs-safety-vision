@@ -362,9 +362,33 @@ Follow all handbook rules, prioritize Lifesaving Rules, differentiate visual obs
 
     let parsed: EHSAssessmentResponse;
     try {
-      parsed = JSON.parse(rawText);
-    } catch {
-      throw new Error('Malformed JSON received from Gemini.');
+      // 1. Clean markdown code blocks if model included them
+      let cleaned = rawText.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+
+      // 2. Extract first matching JSON object
+      const startIdx = cleaned.indexOf('{');
+      const endIdx = cleaned.lastIndexOf('}');
+      if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        cleaned = cleaned.slice(startIdx, endIdx + 1);
+      }
+
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (innerJsonErr) {
+        // Attempt light repair of common LLM JSON faults (trailing commas)
+        const repaired = cleaned
+          .replace(/,\s*([\]}])/g, '$1')
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+        parsed = JSON.parse(repaired);
+      }
+    } catch (parseErr) {
+      console.warn('JSON parsing attempt failed for raw text:', rawText.slice(0, 300));
+      throw new Error('Malformed JSON received from Gemini. Please retry the inspection.');
     }
 
     // Server-side validation and sanitization
@@ -449,7 +473,7 @@ function sanitizeEHSResponse(data: Partial<EHSAssessmentResponse>): EHSAssessmen
     }
 
     return {
-      id: typeof h.id === 'number' ? h.id : index + 1,
+      id: index + 1, // Enforce strictly unique 1-based sequential IDs to guarantee key uniqueness
       category: h.category || 'General Workplace Safety',
       handbookSection: h.handbookSection || 'General EHS Handbook Standards',
       lifesavingRule: Boolean(h.lifesavingRule),

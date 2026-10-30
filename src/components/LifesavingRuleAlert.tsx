@@ -92,9 +92,9 @@ export const LifesavingRuleAlert: React.FC<LifesavingRuleAlertProps> = ({
           Flagged Findings Under Lifesaving Rules:
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {lifesavingFindings.map((finding) => (
+          {lifesavingFindings.map((finding, idx) => (
             <div
-              key={finding.id}
+              key={`ls-finding-${finding.id}-${idx}`}
               onClick={() => onSelectHazard?.(finding.id)}
               className="p-3 bg-white rounded-lg border border-amber-200 hover:border-amber-400 cursor-pointer transition-shadow shadow-xs hover:shadow-sm"
             >

@@ -61,9 +61,9 @@ export const StopWorkAlert: React.FC<StopWorkAlertProps> = ({ hazards, onSelectH
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2">
-            {criticalHazards.map((item) => (
+            {criticalHazards.map((item, idx) => (
               <button
-                key={item.id}
+                key={`stop-work-${item.id}-${idx}`}
                 onClick={() => onSelectHazard?.(item.id)}
                 className="text-left p-3 rounded-lg bg-white border border-red-300 hover:border-red-500 hover:shadow-sm transition-all group flex items-start gap-2.5"
               >

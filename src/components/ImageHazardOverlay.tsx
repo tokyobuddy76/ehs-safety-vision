@@ -117,8 +117,11 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
     const width = Math.max(0.06, Math.min(0.95 - x, bbox.width));
     const height = Math.max(0.06, Math.min(0.95 - y, bbox.height));
 
+    const uniqueId = typeof h.id === 'number' && h.id > 0 ? h.id : index + 1;
+
     return {
       ...h,
+      id: uniqueId,
       resolvedBbox: { x, y, width, height },
       isEstimated,
     };
@@ -298,11 +301,11 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
           >
             <defs>
               {/* Dynamic arrowhead markers for each hazard */}
-              {resolvedHazards.map((h) => {
+              {resolvedHazards.map((h, idx) => {
                 const colors = getRiskColors(h.riskLevel, selectedHazardId === h.id);
                 return (
                   <marker
-                    key={`marker-${h.id}`}
+                    key={`marker-${h.id}-${idx}`}
                     id={`arrowhead-${h.id}`}
                     viewBox="0 0 14 14"
                     refX="11"
@@ -323,7 +326,7 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
               </filter>
             </defs>
 
-            {resolvedHazards.map((h) => {
+            {resolvedHazards.map((h, idx) => {
               const bbox = h.resolvedBbox;
               const isSelected = selectedHazardId === h.id;
               const colors = getRiskColors(h.riskLevel, isSelected);
@@ -344,7 +347,7 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
 
               return (
                 <g
-                  key={`svg-indicator-${h.id}`}
+                  key={`svg-indicator-${h.id}-${idx}`}
                   className="transition-opacity duration-200"
                   style={{ opacity: selectedHazardId === null || isSelected ? 1 : 0.65 }}
                 >
@@ -461,7 +464,7 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
         {/* Interactive HTML Badges & Pins Layer */}
         {showOverlay && (
           <div className="absolute inset-0 pointer-events-none">
-            {resolvedHazards.map((hazard) => {
+            {resolvedHazards.map((hazard, idx) => {
               const bbox = hazard.resolvedBbox;
               const isSelected = selectedHazardId === hazard.id;
               const colors = getRiskColors(hazard.riskLevel, isSelected);
@@ -474,7 +477,7 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
 
               return (
                 <div
-                  key={`html-pin-${hazard.id}`}
+                  key={`html-pin-${hazard.id}-${idx}`}
                   style={{ left, top, width, height }}
                   className="absolute pointer-events-auto cursor-pointer"
                   onClick={() => onSelectHazard(hazard.id)}
@@ -533,12 +536,12 @@ export const ImageHazardOverlay: React.FC<ImageHazardOverlayProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
-            {resolvedHazards.map((h) => {
+            {resolvedHazards.map((h, idx) => {
               const isSelected = selectedHazardId === h.id;
 
               return (
                 <button
-                  key={`quick-btn-${h.id}`}
+                  key={`quick-btn-${h.id}-${idx}`}
                   onClick={() => onSelectHazard(h.id)}
                   className={`px-2.5 py-1 rounded-md font-bold text-xs flex items-center gap-1.5 transition-all ${
                     isSelected

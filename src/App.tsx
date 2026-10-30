@@ -486,9 +486,9 @@ export default function App() {
                       </h3>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
-                      {criticalStopWorkHazards.map((hazard) => (
+                      {criticalStopWorkHazards.map((hazard, idx) => (
                         <HazardCard
-                          key={hazard.id}
+                          key={`crit-hazard-${hazard.id}-${idx}`}
                           hazard={hazard}
                           isSelected={selectedHazardId === hazard.id}
                           onSelect={handleSelectHazard}
@@ -508,9 +508,9 @@ export default function App() {
                       </h3>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
-                      {highPriorityHazards.map((hazard) => (
+                      {highPriorityHazards.map((hazard, idx) => (
                         <HazardCard
-                          key={hazard.id}
+                          key={`high-hazard-${hazard.id}-${idx}`}
                           hazard={hazard}
                           isSelected={selectedHazardId === hazard.id}
                           onSelect={handleSelectHazard}
@@ -530,9 +530,9 @@ export default function App() {
                       </h3>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
-                      {otherObservations.map((hazard) => (
+                      {otherObservations.map((hazard, idx) => (
                         <HazardCard
-                          key={hazard.id}
+                          key={`other-hazard-${hazard.id}-${idx}`}
                           hazard={hazard}
                           isSelected={selectedHazardId === hazard.id}
                           onSelect={handleSelectHazard}
@@ -562,9 +562,9 @@ export default function App() {
                       </div>
                     ) : (
                       <div className="grid gap-4 lg:grid-cols-2">
-                        {filteredHazards.map((hazard) => (
+                        {filteredHazards.map((hazard, idx) => (
                           <HazardCard
-                            key={hazard.id}
+                            key={`filter-hazard-${hazard.id}-${idx}`}
                             hazard={hazard}
                             isSelected={selectedHazardId === hazard.id}
                             onSelect={handleSelectHazard}
